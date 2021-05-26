@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:io';
 
-CameraController? controller;
+CameraController? _cameraController;
 
 class HomePage extends StatefulWidget {
   List<CameraDescription> cameras = [];
@@ -19,8 +19,15 @@ class _HomePageState extends State<HomePage> {
   List<XFile> listImageFile = [];
   List<String> pathToImageLocation = [];
   late File file;
-  int cameraType = 0;
-
+  late int cameraType;
+  late FlashMode currentFlashMode;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    currentFlashMode = FlashMode.auto;
+    cameraType  = 0;
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,45 +40,9 @@ class _HomePageState extends State<HomePage> {
               width: MediaQuery.of(context).size.width,
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Expanded( child: Container(
-                        height:70,
-                        child: listImageFile.length != 0?PageView.builder(
-                            itemCount:listImageFile.length ,itemBuilder: (context,index)=>
-                            Stack(children: [
-                              Align(alignment: Alignment.center,child: Image(image: FileImage(File(listImageFile[listImageFile.length-index-1].path)))),
-                              Positioned(
-                                right:0,
-                                top:0,
-                                child: GestureDetector(
-                                  onTap: (){
-                                    print('Removing');
-                                    listImageFile.removeAt(listImageFile.length-index-1);setState(() {
-
-                                    });},
-                                  child: Icon(Icons.delete,color: Colors.white70,size: 15,),
-                                ),
-                              ),
-                              Align(alignment:Alignment.centerRight,child: Opacity(opacity: (index!=listImageFile.length-1 && listImageFile.length>1)?1:0,child: Icon(Icons.skip_next),)),
-                              Align(alignment:Alignment.centerLeft,child: Opacity(opacity: index != 0?1:0,child: Icon(Icons.skip_previous),))
-                            ])):null),
-                  ),
-                  Expanded(
-                    child: GestureDetector(onTap:(){
-                      onTakePictureButtonPressed();
-                    },child: Icon(Icons.camera,color: Colors.black,size: 60,)),
-                  ),
-                  Expanded(child: GestureDetector(
-                      onTap: (){
-                        cameraType = cameraType ==0?1:0;
-                        controller = CameraController(widget.cameras[cameraType], ResolutionPreset.max);
-                         controller!.initialize().then((_) {
-                           setState(() {
-
-                           });
-                         });
-
-                      },
-                      child: Icon(Icons.camera_alt))),
+                  buildMiniPreview(),
+                  CameraControl(),
+                  switchCamera(),
 
                 ],),
             ),
@@ -79,6 +50,66 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+  }
+
+  Expanded switchCamera() {
+    return Expanded(child: GestureDetector(
+                    onTap: (){
+                      cameraType = cameraType ==0?1:0;
+                      _cameraController = CameraController(widget.cameras[cameraType], ResolutionPreset.max);
+                       _cameraController!.initialize().then((_) {
+                         setState(() {
+
+                         });
+                       });
+
+                    },
+                    child: Icon(Icons.camera_alt)));
+  }
+
+  Expanded CameraControl() {
+
+    print('All camera set');
+    return Expanded(
+                  child: Column(
+                    children: [
+                      GestureDetector(onTap:(){
+                        onTakePictureButtonPressed();
+                      },child: Icon(Icons.camera,color: Colors.black,size: 60,)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          FlashButton(key: UniqueKey(), iconData: Icons.flash_off, flashMode: FlashMode.off,isSelected:currentFlashMode==FlashMode.off),
+                          FlashButton(key: UniqueKey(), iconData: Icons.flash_auto, flashMode: FlashMode.auto,isSelected: currentFlashMode==FlashMode.auto,),
+                          FlashButton(key: UniqueKey(), iconData: Icons.flash_on, flashMode: FlashMode.always,isSelected: currentFlashMode==FlashMode.auto,),
+                        ],)
+                    ],
+                  ),
+                );
+  }
+
+  Expanded buildMiniPreview() {
+    return Expanded( child: Container(
+                      height:70,
+                      child: listImageFile.length != 0?PageView.builder(
+                          itemCount:listImageFile.length ,itemBuilder: (context,index)=>
+                          Stack(children: [
+                            Align(alignment: Alignment.center,child: Image(image: FileImage(File(listImageFile[listImageFile.length-index-1].path)))),
+                            Positioned(
+                              right:0,
+                              top:0,
+                              child: GestureDetector(
+                                onTap: (){
+                                  print('Removing');
+                                  listImageFile.removeAt(listImageFile.length-index-1);setState(() {
+
+                                  });},
+                                child: Icon(Icons.delete,color: Colors.white70,size: 15,),
+                              ),
+                            ),
+                            Align(alignment:Alignment.centerRight,child: Opacity(opacity: (index!=listImageFile.length-1 && listImageFile.length>1)?1:0,child: Icon(Icons.skip_next),)),
+                            Align(alignment:Alignment.centerLeft,child: Opacity(opacity: index != 0?1:0,child: Icon(Icons.skip_previous),))
+                          ])):null),);
   }
 
   void onTakePictureButtonPressed() async{
@@ -93,6 +124,40 @@ class _HomePageState extends State<HomePage> {
 
       });
   });}
+}
+
+class FlashButton extends StatefulWidget {
+  FlashMode flashMode;
+  IconData? iconData;
+  bool isSelected;
+  FlashButton({
+    required Key key,required this.flashMode,required this.iconData,required this.isSelected
+  }) : super(key: key);
+
+  @override
+  _FlashButtonState createState() => _FlashButtonState();
+}
+
+class _FlashButtonState extends State<FlashButton> {
+  late bool isSelected;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    isSelected = widget.isSelected;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print('Just Flash');
+    return GestureDetector(onTap: (){
+      _cameraController!.setFlashMode(widget.flashMode);
+      isSelected = !isSelected;
+      setState(() {
+
+      });
+    },child: Icon(widget.iconData,color: isSelected?Colors.white:Colors.black,));
+  }
 }
 
 
@@ -112,8 +177,9 @@ class _CameraAppState extends State<CameraApp> {
   void initState() {
 
     super.initState();
-    controller = CameraController(widget.cameras, ResolutionPreset.max);
-    controller!.initialize().then((_) {
+    _cameraController = CameraController(widget.cameras, ResolutionPreset.max);
+    _cameraController!.initialize().then((_) {
+
       if (!mounted) {
         return;
       }
@@ -123,23 +189,23 @@ class _CameraAppState extends State<CameraApp> {
 
   @override
   void dispose() {
-    controller?.dispose();
+    _cameraController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!controller!.value.isInitialized) {
+    if (!_cameraController!.value.isInitialized) {
       return Container();
     }
     return MaterialApp(
-      home: CameraPreview(controller!),
+      home: CameraPreview(_cameraController!),
     );
   }
 }
 
 Future<XFile?> takePicture() async {
-  final CameraController? cameraController = controller;
+  final CameraController? cameraController = _cameraController;
   if (cameraController == null || !cameraController.value.isInitialized) {
     showInSnackBar('Error: select a camera first.');
     return null;
@@ -170,5 +236,7 @@ void showInSnackBar(String message) {
 }
 
 void _showCameraException(CameraException e) {
+
+  print(e);
   // TODO
 }
