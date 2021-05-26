@@ -7,7 +7,6 @@ CameraController? controller;
 
 class HomePage extends StatefulWidget {
   List<CameraDescription> cameras = [];
-
   HomePage(this.cameras, {
     Key? key,
   }) : super(key: key);
@@ -19,15 +18,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<XFile> listImageFile = [];
   List<String> pathToImageLocation = [];
-
-  String path = '';
   late File file;
+  int cameraType = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          CameraApp(widget.cameras),
+          InteractiveViewer(child: CameraApp(widget.cameras[0],UniqueKey)),
           Positioned(
             bottom:30,
             child: Container(
@@ -36,7 +35,6 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Expanded( child: Container(
                         height:70,
-                        //Image(image: FileImage(File(listImageFile[0].path)),):null),
                         child: listImageFile.length != 0?PageView.builder(
                             itemCount:listImageFile.length ,itemBuilder: (context,index)=>
                             Stack(children: [
@@ -62,7 +60,18 @@ class _HomePageState extends State<HomePage> {
                       onTakePictureButtonPressed();
                     },child: Icon(Icons.camera,color: Colors.black,size: 60,)),
                   ),
-                  Expanded(child: Icon(Icons.swap_horizontal_circle_outlined)),
+                  Expanded(child: GestureDetector(
+                      onTap: (){
+                        cameraType = cameraType ==0?1:0;
+                        controller = CameraController(widget.cameras[cameraType], ResolutionPreset.max);
+                         controller!.initialize().then((_) {
+                           setState(() {
+
+                           });
+                         });
+
+                      },
+                      child: Icon(Icons.camera_alt))),
 
                 ],),
             ),
@@ -89,8 +98,8 @@ class _HomePageState extends State<HomePage> {
 
 
 class CameraApp extends StatefulWidget {
-  List<CameraDescription> cameras;
-  CameraApp(this.cameras);
+  CameraDescription cameras;
+  CameraApp(this.cameras,key);
 
 
   @override
@@ -103,7 +112,7 @@ class _CameraAppState extends State<CameraApp> {
   void initState() {
 
     super.initState();
-    controller = CameraController(widget.cameras[0], ResolutionPreset.max);
+    controller = CameraController(widget.cameras, ResolutionPreset.max);
     controller!.initialize().then((_) {
       if (!mounted) {
         return;
