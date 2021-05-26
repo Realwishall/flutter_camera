@@ -36,12 +36,31 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Expanded( child: Container(
                         height:70,
-                        child: listImageFile.length == 0?Image(image: FileImage(File(listImageFile[0].path)),):null),
+                        //Image(image: FileImage(File(listImageFile[0].path)),):null),
+                        child: listImageFile.length != 0?PageView.builder(
+                            itemCount:listImageFile.length ,itemBuilder: (context,index)=>
+                            Stack(children: [
+                              Align(alignment: Alignment.center,child: Image(image: FileImage(File(listImageFile[listImageFile.length-index-1].path)))),
+                              Positioned(
+                                right:0,
+                                top:0,
+                                child: GestureDetector(
+                                  onTap: (){
+                                    print('Removing');
+                                    listImageFile.removeAt(listImageFile.length-index-1);setState(() {
+
+                                    });},
+                                  child: Icon(Icons.delete,color: Colors.white70,size: 15,),
+                                ),
+                              ),
+                              Align(alignment:Alignment.centerRight,child: Opacity(opacity: (index!=listImageFile.length-1 && listImageFile.length>1)?1:0,child: Icon(Icons.skip_next),)),
+                              Align(alignment:Alignment.centerLeft,child: Opacity(opacity: index != 0?1:0,child: Icon(Icons.skip_previous),))
+                            ])):null),
                   ),
                   Expanded(
                     child: GestureDetector(onTap:(){
                       onTakePictureButtonPressed();
-                    },child: Icon(Icons.camera,color: Colors.white,size: 60,)),
+                    },child: Icon(Icons.camera,color: Colors.black,size: 60,)),
                   ),
                   Expanded(child: Icon(Icons.swap_horizontal_circle_outlined)),
 
