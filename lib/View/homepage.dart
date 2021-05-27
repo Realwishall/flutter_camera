@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'dart:io';
 
+import 'package:flutter_camera_app/View/preview.dart';
+import '../Model/listCameraFlashMode.dart';
 CameraController? _cameraController;
 
 class HomePage extends StatefulWidget {
@@ -17,16 +19,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<XFile> listImageFile = [];
-  List<String> pathToImageLocation = [];
   late File file;
   late int cameraType;
-  late FlashMode currentFlashMode;
+  late int flashMode;
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    currentFlashMode = FlashMode.auto;
     cameraType  = 0;
+    flashMode = 0;
   }
   @override
   Widget build(BuildContext context) {
@@ -69,20 +70,26 @@ class _HomePageState extends State<HomePage> {
 
   Expanded CameraControl() {
 
-    print('All camera set');
+    ListCameraFlashMode _listCameraFlashMode =  ListCameraFlashMode();
+
     return Expanded(
                   child: Column(
                     children: [
                       GestureDetector(onTap:(){
                         onTakePictureButtonPressed();
                       },child: Icon(Icons.camera,color: Colors.black,size: 60,)),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          FlashButton(key: UniqueKey(), iconData: Icons.flash_off, flashMode: FlashMode.off,isSelected:currentFlashMode==FlashMode.off),
-                          FlashButton(key: UniqueKey(), iconData: Icons.flash_auto, flashMode: FlashMode.auto,isSelected: currentFlashMode==FlashMode.auto,),
-                          FlashButton(key: UniqueKey(), iconData: Icons.flash_on, flashMode: FlashMode.always,isSelected: currentFlashMode==FlashMode.auto,),
-                        ],)
+                      GestureDetector(onTap: (){
+                        if(flashMode==_listCameraFlashMode.listCameraFlashMode.length-1){
+                          flashMode =0;
+                        }else{
+                          flashMode = flashMode+1;
+                        }
+                        _cameraController!.setFlashMode(_listCameraFlashMode.listCameraFlashMode[flashMode].flashMode);
+
+                        setState(() {
+
+                        });
+                      },child: Icon(_listCameraFlashMode.listCameraFlashMode[flashMode].iconData,color: Colors.white))
                     ],
                   ),
                 );
@@ -94,7 +101,14 @@ class _HomePageState extends State<HomePage> {
                       child: listImageFile.length != 0?PageView.builder(
                           itemCount:listImageFile.length ,itemBuilder: (context,index)=>
                           Stack(children: [
-                            Align(alignment: Alignment.center,child: Image(image: FileImage(File(listImageFile[listImageFile.length-index-1].path)))),
+                            Align(alignment: Alignment.center,child: GestureDetector(onTap: (){
+                              //Open priveiw
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => Preview(listImageFile:listImageFile,indexOfImage:index,key: UniqueKey())),
+                              );
+                              //Navigator.push(context, Preview(key: UniqueKey));
+                            },child: Image(image: FileImage(File(listImageFile[listImageFile.length-index-1].path))))),
                             Positioned(
                               right:0,
                               top:0,
